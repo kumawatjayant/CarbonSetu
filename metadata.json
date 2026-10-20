@@ -1,0 +1,6 @@
+{
+  "name": "CarbonBridge",
+  "description": "Connecting Carbon. Creating Impact. B2B carbon-credit marketplace and bundling platform connecting verified suppliers and corporate buyers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
