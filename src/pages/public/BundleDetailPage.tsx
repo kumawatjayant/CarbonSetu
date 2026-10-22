@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { DemoBadge } from '../../components/common/DemoBadge';
 import { QuoteModal } from '../../components/marketplace/QuoteModal';
+import { PaymentModal } from '../../components/payment/PaymentModal';
+import { PaymentReceiptModal } from '../../components/payment/PaymentReceiptModal';
+import { PaymentRecord } from '../../types';
 import { 
   ArrowLeft, 
   Bookmark, 
@@ -12,7 +15,8 @@ import {
   Calendar, 
   ArrowUpRight,
   PieChart,
-  CheckCircle2
+  CheckCircle2,
+  CreditCard
 } from 'lucide-react';
 
 interface BundleDetailPageProps {
@@ -28,6 +32,9 @@ export const BundleDetailPage: React.FC<BundleDetailPageProps> = ({
 }) => {
   const { bundles, savedBundleIds, toggleSaveBundle } = useApp();
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+  const [completedPayment, setCompletedPayment] = useState<PaymentRecord | null>(null);
 
   const bundle = bundles.find(b => b.id === bundleId);
 
@@ -134,13 +141,24 @@ export const BundleDetailPage: React.FC<BundleDetailPageProps> = ({
               </div>
             )}
 
-            <button
-              type="button"
-              onClick={() => setQuoteModalOpen(true)}
-              className="w-full py-2.5 text-xs font-semibold text-center text-[#123D2A] bg-white hover:bg-[#DDEBDD] rounded-lg transition-colors shadow-xs"
-            >
-              Request Quote for Bundle
-            </button>
+            <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setPaymentModalOpen(true)}
+                className="w-full py-2.5 text-xs font-bold text-center text-white bg-[#218653] hover:bg-emerald-600 rounded-lg transition-colors shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <CreditCard className="w-3.5 h-3.5" />
+                <span>Instant Buy Portfolio & Settle</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setQuoteModalOpen(true)}
+                className="w-full py-2 text-xs font-semibold text-center text-[#123D2A] bg-white hover:bg-[#DDEBDD] rounded-lg transition-colors shadow-xs cursor-pointer"
+              >
+                Request Bespoke Quote
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -248,6 +266,29 @@ export const BundleDetailPage: React.FC<BundleDetailPageProps> = ({
         isOpen={quoteModalOpen}
         onClose={() => setQuoteModalOpen(false)}
         bundle={bundle}
+      />
+
+      <PaymentModal
+        isOpen={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        itemTitle={bundle.bundleName}
+        quantity={bundle.totalQuantity}
+        quantityUnit={bundle.quantityUnit}
+        unitPrice={bundle.weightedAveragePrice || 10.48}
+        totalAmount={totalValue ?? undefined}
+        onPaymentSuccess={(payment) => {
+          setCompletedPayment(payment);
+        }}
+        onViewReceipt={(payment) => {
+          setCompletedPayment(payment);
+          setReceiptModalOpen(true);
+        }}
+      />
+
+      <PaymentReceiptModal
+        isOpen={receiptModalOpen}
+        onClose={() => setReceiptModalOpen(false)}
+        payment={completedPayment}
       />
     </div>
   );

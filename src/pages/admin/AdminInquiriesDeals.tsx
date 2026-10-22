@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { DemoBadge } from '../../components/common/DemoBadge';
-import { InquiryDeal, DealStage } from '../../types';
+import { PaymentReceiptModal } from '../../components/payment/PaymentReceiptModal';
+import { InquiryDeal, DealStage, PaymentRecord } from '../../types';
 import { 
   Send, 
   Lock, 
@@ -12,7 +13,9 @@ import {
   Search,
   Filter,
   Eye,
-  AlertTriangle
+  AlertTriangle,
+  ShieldCheck,
+  FileText
 } from 'lucide-react';
 
 interface AdminInquiriesDealsProps {
@@ -20,11 +23,13 @@ interface AdminInquiriesDealsProps {
 }
 
 export const AdminInquiriesDeals: React.FC<AdminInquiriesDealsProps> = ({ navigate }) => {
-  const { deals, updateDealStage, addMessageToDeal, assignDealAdmin, users, showToast } = useApp();
+  const { deals, updateDealStage, addMessageToDeal, assignDealAdmin, users, payments, showToast } = useApp();
 
   const [selectedDealId, setSelectedDealId] = useState<string>(deals[0]?.id || '');
   const [filterStage, setFilterStage] = useState<string>('all');
   const [search, setSearch] = useState('');
+  const [activeReceipt, setActiveReceipt] = useState<PaymentRecord | null>(null);
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
 
   // Internal note input
   const [internalNoteText, setInternalNoteText] = useState('');
@@ -243,6 +248,52 @@ export const AdminInquiriesDeals: React.FC<AdminInquiriesDealsProps> = ({ naviga
                     </span>
                   </div>
                 </div>
+
+                {/* Escrow Settlement Audit Strip */}
+                {(() => {
+                  const dealPayment = payments.find(p => p.dealId === selectedDeal.id);
+                  if (!dealPayment && selectedDeal.stage !== 'Completed') return null;
+                  return (
+                    <div className="mt-4 p-3.5 rounded-xl bg-[#218653]/10 border border-[#218653]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-[#218653] text-white flex items-center justify-center shrink-0">
+                          <ShieldCheck className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-[#123D2A]">CarbonBridge Escrow Custody: Settled</span>
+                            {dealPayment && (
+                              <span className="text-[10px] font-mono bg-[#218653] text-white px-2 py-0.5 rounded font-bold">
+                                {dealPayment.certificateNumber}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-[#69746D] mt-0.5">
+                            {dealPayment ? (
+                              <>Settled via {dealPayment.paymentMethod} · Escrow Ref: <span className="font-mono">{dealPayment.escrowReference}</span> · Commission recognized</>
+                            ) : (
+                              <>Deal marked completed. Escrow settlement certificate verified in registry holdings.</>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+
+                      {dealPayment && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveReceipt(dealPayment);
+                            setIsReceiptOpen(true);
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-[#123D2A] hover:bg-[#1B4D36] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shrink-0 shadow-xs cursor-pointer"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>View Custody Certificate</span>
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Private Broker Internal Notes (Section 12) */}
@@ -429,6 +480,13 @@ export const AdminInquiriesDeals: React.FC<AdminInquiriesDealsProps> = ({ naviga
           </div>
         </div>
       )}
+
+      {/* Official Custody & Settlement Receipt Modal */}
+      <PaymentReceiptModal
+        isOpen={isReceiptOpen}
+        onClose={() => setIsReceiptOpen(false)}
+        payment={activeReceipt}
+      />
 
     </div>
   );

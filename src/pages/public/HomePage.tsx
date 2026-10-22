@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { ListingCard } from '../../components/marketplace/ListingCard';
 import { BundleCard } from '../../components/bundles/BundleCard';
 import { ProjectArtwork } from '../../components/common/ProjectArtwork';
 import { DemoBadge } from '../../components/common/DemoBadge';
+import { HeroImageSlider } from '../../components/home/HeroImageSlider';
+import { HeadlineSlider, CARBON_PROJECT_SLIDES } from '../../components/home/HeadlineSlider';
 import { 
   ArrowRight, 
+  ArrowUpRight,
   ShieldCheck, 
   Layers, 
   CheckCircle2, 
@@ -15,6 +18,11 @@ import {
   Building2, 
   ChevronDown, 
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+  Play,
+  Pause,
+  MapPin,
   BarChart3,
   Scale,
   Handshake,
@@ -34,7 +42,19 @@ export const HomePage: React.FC<HomePageProps> = ({
 }) => {
   const { listings, bundles } = useApp();
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [heroSlideIdx, setHeroSlideIdx] = useState(0);
+  const [isHeroPlaying, setIsHeroPlaying] = useState(true);
 
+  // Auto-advance hero slides
+  useEffect(() => {
+    if (!isHeroPlaying) return;
+    const timer = setInterval(() => {
+      setHeroSlideIdx((prev) => (prev + 1) % CARBON_PROJECT_SLIDES.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [isHeroPlaying]);
+
+  const currentHeroSlide = CARBON_PROJECT_SLIDES[heroSlideIdx];
   const featuredListings = listings.filter(l => l.listingStatus === 'approved').slice(0, 3);
   const featuredBundle = bundles[0];
 
@@ -63,102 +83,253 @@ export const HomePage: React.FC<HomePageProps> = ({
       {/* Demo notice banner */}
       <DemoBadge variant="banner" />
 
-      {/* SECTION 1: HERO SECTION */}
-      <section className="relative overflow-hidden pt-4 pb-12 sm:pt-8 sm:pb-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
+      {/* SECTION 1: HERO SECTION - Master Slider in the red-circled area */}
+      <section className="relative overflow-hidden pt-2 pb-10 sm:pt-4 sm:pb-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          
+          {/* Main Hero Slider Banner - Fills the exact red-circled area */}
+          <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-[#DDEBDD] bg-[#123D2A] text-white">
             
-            {/* Left Column: Value Proposition */}
-            <div className="lg:col-span-7 space-y-6 text-left">
-              <div className="inline-flex items-center gap-2 text-xs font-semibold text-[#218653] uppercase tracking-wider">
-                <span>Enterprise Carbon-Credit Marketplace & Bundling Engine</span>
-              </div>
-
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#123D2A] tracking-tight leading-[1.15]" style={{ textWrap: 'balance' }}>
-                A Smarter Way to Discover and Bundle Carbon Credits
-              </h1>
-
-              <p className="text-base sm:text-lg text-[#69746D] leading-relaxed max-w-2xl">
-                Connect with carbon-credit suppliers, explore project opportunities, and build portfolios aligned with your sustainability requirements through one transparent platform.
-              </p>
-
-              {/* Action Buttons */}
-              <div className="pt-2 flex flex-wrap items-center gap-4">
-                <button
-                  type="button"
-                  onClick={() => navigate('/marketplace')}
-                  className="px-6 py-3.5 text-sm font-semibold text-white bg-[#123D2A] hover:bg-[#1B4D36] rounded-xl transition-all shadow-sm flex items-center gap-2"
-                >
-                  <span>Explore Marketplace</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => navigate('/seller/listings/new')}
-                  className="px-6 py-3.5 text-sm font-semibold text-[#123D2A] bg-white hover:bg-[#DDEBDD]/50 border border-[#DDEBDD] rounded-xl transition-all"
-                >
-                  <span>List Your Credits</span>
-                </button>
-              </div>
-
-              {/* Verification & Trust badges inline */}
-              <div className="pt-4 border-t border-[#DDEBDD] flex flex-wrap items-center gap-6 text-xs text-[#69746D]">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-[#218653]" />
-                  <span>Audited Documentation</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-[#218653]" />
-                  <span>Provenance-Preserving Bundles</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Handshake className="w-4 h-4 text-[#218653]" />
-                  <span>Broker-Assisted Delivery</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column: High-Fidelity Thematic Graphic Panel */}
-            <div className="lg:col-span-5">
-              <div className="bg-white rounded-2xl border border-[#DDEBDD] shadow-xl overflow-hidden">
-                <div className="p-4 bg-[#123D2A] text-white flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-[#218653]" />
-                    <span className="text-xs font-semibold tracking-wide">Live Marketplace Snapshot</span>
-                  </div>
-                  <span className="text-[11px] font-mono text-[#DDEBDD]">Verra · GS · Puro.earth</span>
-                </div>
-
-                {/* SVG Visual Graphic */}
-                <ProjectArtwork category="Forestry & Afforestation" height="h-52" />
-
-                <div className="p-5 space-y-4 bg-white">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#69746D]">Active Registry Inventory</span>
-                    <span className="font-bold text-[#123D2A] font-mono tabular-nums">227,400 tCO2e</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#69746D]">Curated Portfolio Bundles</span>
-                    <span className="font-bold text-[#123D2A] font-mono tabular-nums">3 Institutional Mixes</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#69746D]">Facilitation Fee Structure</span>
-                    <span className="font-bold text-[#218653] font-mono">3.0% – 3.5% (Transparent)</span>
-                  </div>
-
-                  <button
-                    onClick={() => navigate('/bundles')}
-                    className="w-full py-2.5 text-xs font-semibold text-center text-[#123D2A] bg-[#F7F8F4] hover:bg-[#DDEBDD] rounded-lg border border-[#DDEBDD] transition-colors flex items-center justify-center gap-1.5"
+            {/* Background Photographic Image Slides */}
+            <div className="relative min-h-[440px] sm:min-h-[480px] lg:min-h-[500px] w-full overflow-hidden flex flex-col justify-between">
+              {CARBON_PROJECT_SLIDES.map((slide, idx) => {
+                const isActive = idx === heroSlideIdx;
+                return (
+                  <div
+                    key={slide.id}
+                    className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                      isActive ? 'opacity-100 z-0' : 'opacity-0 z-0 pointer-events-none'
+                    }`}
                   >
-                    <span>Inspect Pre-Assembled Bundles</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <img
+                      src={slide.imageUrl}
+                      alt={slide.title}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover transform scale-105 transition-transform duration-7000 ease-out"
+                    />
+                    {/* Deep Emerald Multi-Stop Protective Gradient for absolute typographic clarity */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#0C2B1D]/95 via-[#0C2B1D]/85 to-[#0C2B1D]/50" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0C2B1D] via-transparent to-black/30" />
+                  </div>
+                );
+              })}
+
+              {/* Top Header Strip inside Slider */}
+              <div className="relative z-10 p-6 sm:p-8 flex flex-wrap items-center justify-between gap-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-xs font-semibold text-[#DDEBDD]">
+                  <span className="w-2 h-2 rounded-full bg-[#34D399] animate-pulse" />
+                  <span>Enterprise Carbon-Credit Marketplace & Bundling Engine</span>
+                </div>
+
+                {/* Slider Controls (Prev, Next, Play/Pause, Index) */}
+                <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/15 text-white">
+                  <button
+                    type="button"
+                    onClick={() => setHeroSlideIdx((prev) => (prev - 1 + CARBON_PROJECT_SLIDES.length) % CARBON_PROJECT_SLIDES.length)}
+                    className="p-1 rounded-full hover:bg-white/20 transition-colors cursor-pointer"
+                    aria-label="Previous slide"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="text-xs font-mono text-[#DDEBDD] px-1 font-semibold">
+                    {heroSlideIdx + 1} / {CARBON_PROJECT_SLIDES.length}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setHeroSlideIdx((prev) => (prev + 1) % CARBON_PROJECT_SLIDES.length)}
+                    className="p-1 rounded-full hover:bg-white/20 transition-colors cursor-pointer"
+                    aria-label="Next slide"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                  <span className="w-px h-3 bg-white/20 mx-0.5" />
+                  <button
+                    type="button"
+                    onClick={() => setIsHeroPlaying(!isHeroPlaying)}
+                    className="p-1 rounded-full hover:bg-white/20 transition-colors cursor-pointer"
+                    title={isHeroPlaying ? 'Pause rotation' : 'Play rotation'}
+                  >
+                    {isHeroPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
                   </button>
                 </div>
               </div>
+
+              {/* Main Headline & Value Proposition (Where 'A Smarter Way...' is written) */}
+              <div className="relative z-10 px-6 sm:px-8 max-w-3xl space-y-4 my-auto py-4">
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-[1.15]" style={{ textWrap: 'balance' }}>
+                  A Smarter Way to Discover and Bundle Carbon Credits
+                </h1>
+
+                <p className="text-base sm:text-lg text-[#DDEBDD] leading-relaxed max-w-2xl">
+                  Connect with carbon-credit suppliers, explore project opportunities, and build portfolios aligned with your sustainability requirements through one transparent platform.
+                </p>
+
+                {/* Action Buttons */}
+                <div className="pt-2 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/marketplace')}
+                    className="px-6 py-3.5 text-sm font-semibold text-[#123D2A] bg-white hover:bg-[#DDEBDD] rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer"
+                  >
+                    <span>Explore Marketplace</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => navigate('/seller/listings/new')}
+                    className="px-6 py-3.5 text-sm font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/30 rounded-xl transition-all backdrop-blur-md cursor-pointer"
+                  >
+                    <span>List Your Credits</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onSelectListing(currentHeroSlide.listingId)}
+                    className="px-4 py-3.5 text-sm font-semibold text-[#34D399] hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <span>View {currentHeroSlide.shortName}</span>
+                    <ArrowUpRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Bottom Project Metadata Bar & Slide Dots */}
+              <div className="relative z-10 p-6 sm:p-8 pt-4 border-t border-white/15 flex flex-wrap items-center justify-between gap-4 bg-black/20 backdrop-blur-xs">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className={`px-2.5 py-1 rounded-md text-xs font-bold text-white shadow-xs ${currentHeroSlide.badgeBg}`}>
+                    {currentHeroSlide.category}
+                  </span>
+                  <span className="text-xs font-mono text-[#DDEBDD] bg-white/10 px-2 py-0.5 rounded border border-white/15">
+                    {currentHeroSlide.standard}
+                  </span>
+                  <span className="text-xs text-white/90 flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-[#34D399]" />
+                    <span className="font-medium">{currentHeroSlide.location}</span>
+                  </span>
+                  <span className="text-xs font-mono font-bold text-[#34D399] bg-white/10 px-2 py-0.5 rounded">
+                    {currentHeroSlide.price}
+                  </span>
+                </div>
+
+                {/* Slide indicator dots */}
+                <div className="flex items-center gap-2">
+                  {CARBON_PROJECT_SLIDES.map((slide, idx) => (
+                    <button
+                      key={slide.id}
+                      type="button"
+                      onClick={() => setHeroSlideIdx(idx)}
+                      className={`h-2.5 rounded-full transition-all cursor-pointer ${
+                        idx === heroSlideIdx 
+                          ? 'w-8 bg-[#34D399]' 
+                          : 'w-2.5 bg-white/35 hover:bg-white/70'
+                      }`}
+                      title={slide.shortName}
+                      aria-label={`Jump to slide ${idx + 1}: ${slide.shortName}`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Running Progress Bar */}
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/15 z-20">
+                <div 
+                  className="h-full bg-[#34D399] transition-all duration-300"
+                  style={{ width: `${((heroSlideIdx + 1) / CARBON_PROJECT_SLIDES.length) * 100}%` }}
+                />
+              </div>
+
+            </div>
+          </div>
+
+          {/* 4 Clickable Project Cards showcasing the main work directly below the slider */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-[#123D2A] uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#218653]" />
+                <span>Our Core Project Work (Verified Real-World Assets)</span>
+              </span>
+              <span className="text-xs text-[#69746D] hidden sm:inline">
+                Click any asset to switch the hero slide & explore details
+              </span>
             </div>
 
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              {CARBON_PROJECT_SLIDES.map((slide, idx) => {
+                const isSelected = idx === heroSlideIdx;
+                return (
+                  <div
+                    key={slide.id}
+                    onClick={() => {
+                      setHeroSlideIdx(idx);
+                      onSelectListing(slide.listingId);
+                    }}
+                    className={`group bg-white rounded-2xl border transition-all cursor-pointer overflow-hidden flex flex-col shadow-xs hover:shadow-md ${
+                      isSelected 
+                        ? 'border-[#218653] ring-2 ring-[#218653]/30 shadow-md' 
+                        : 'border-[#DDEBDD] hover:border-[#218653]/60'
+                    }`}
+                  >
+                    <div className="relative h-28 sm:h-32 w-full overflow-hidden bg-[#123D2A]">
+                      <img
+                        src={slide.imageUrl}
+                        alt={slide.title}
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                      <span className={`absolute top-2 left-2 text-[10px] font-bold text-white px-2 py-0.5 rounded shadow-xs ${slide.badgeBg}`}>
+                        {slide.shortName}
+                      </span>
+                      <span className="absolute bottom-1.5 right-2 text-xs font-mono font-bold text-white bg-black/60 px-1.5 py-0.5 rounded backdrop-blur-xs">
+                        {slide.price}
+                      </span>
+                    </div>
+
+                    <div className="p-3 flex-1 flex flex-col justify-between space-y-2">
+                      <div>
+                        <div className="flex items-center gap-1 text-[11px] text-[#69746D]">
+                          <MapPin className="w-3 h-3 text-[#218653] shrink-0" />
+                          <span className="truncate">{slide.location.split(',')[0]}</span>
+                        </div>
+                        <h4 className="text-xs font-bold text-[#123D2A] line-clamp-1 group-hover:text-[#218653] transition-colors mt-0.5">
+                          {slide.title}
+                        </h4>
+                      </div>
+
+                      <div className="pt-2 border-t border-[#DDEBDD]/80 flex items-center justify-between text-[11px]">
+                        <span className="font-mono text-[#69746D]">{slide.volume}</span>
+                        <span className="text-[#218653] font-semibold flex items-center gap-0.5">
+                          <span>Details</span>
+                          <ArrowUpRight className="w-3 h-3" />
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
+
+          {/* Verification & Trust badges strip */}
+          <div className="py-4 px-6 bg-white rounded-2xl border border-[#DDEBDD] flex flex-wrap items-center justify-around gap-4 text-xs text-[#69746D] shadow-xs">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-[#218653]" />
+              <span className="font-medium text-[#123D2A]">Audited Documentation</span>
+              <span className="text-gray-400">· Third-Party VVBs</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Layers className="w-4 h-4 text-[#218653]" />
+              <span className="font-medium text-[#123D2A]">Provenance-Preserving Bundles</span>
+              <span className="text-gray-400">· Retained Registry Serials</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Handshake className="w-4 h-4 text-[#218653]" />
+              <span className="font-medium text-[#123D2A]">Broker-Assisted Delivery</span>
+              <span className="text-gray-400">· Transparent Settlement</span>
+            </div>
+          </div>
+
         </div>
       </section>
 

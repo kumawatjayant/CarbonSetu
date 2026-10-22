@@ -5,7 +5,8 @@ import {
   BuyerRequirement, 
   InquiryDeal, 
   CommissionRecord, 
-  AuditLogItem 
+  AuditLogItem,
+  PaymentRecord
 } from '../types';
 
 export const DEMO_USERS: UserProfile[] = [
@@ -686,3 +687,26 @@ export const DEMO_AUDIT_LOGS: AuditLogItem[] = [
     timestamp: '2026-01-30T10:00:00Z'
   }
 ];
+
+export const DEMO_PAYMENTS: PaymentRecord[] = [
+  {
+    id: 'pay-501',
+    dealId: 'deal-302',
+    dealReference: 'CB-2026-8804',
+    itemTitle: 'Enterprise Balanced Nature & Clean Grid Portfolio',
+    quantity: 12000,
+    quantityUnit: 'tCO2e',
+    amount: 122400,
+    currency: 'USD',
+    paymentMethod: 'B2B Escrow Wire',
+    payerCompany: 'Apex Global Logistics',
+    payerName: 'Elena Rostova',
+    beneficiary: 'CarbonBridge Escrow Custody Account #9924-US',
+    escrowReference: 'CB-ESC-8804-X9',
+    status: 'settled',
+    registrySerialBatch: 'GS-IND-2025-4920-88019-100018',
+    certificateNumber: 'CB-CERT-2026-8804',
+    timestamp: '2026-01-28T17:00:00Z'
+  }
+];
+

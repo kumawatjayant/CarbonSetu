@@ -3,6 +3,9 @@ import { useApp } from '../../context/AppContext';
 import { ProjectArtwork } from '../../components/common/ProjectArtwork';
 import { DemoBadge } from '../../components/common/DemoBadge';
 import { QuoteModal } from '../../components/marketplace/QuoteModal';
+import { PaymentModal } from '../../components/payment/PaymentModal';
+import { PaymentReceiptModal } from '../../components/payment/PaymentReceiptModal';
+import { PaymentRecord } from '../../types';
 import { 
   ArrowLeft, 
   Bookmark, 
@@ -16,7 +19,9 @@ import {
   ExternalLink,
   Lock,
   Layers,
-  Flag
+  Flag,
+  CreditCard,
+  Sparkles
 } from 'lucide-react';
 
 interface ListingDetailPageProps {
@@ -30,6 +35,10 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
 }) => {
   const { listings, savedListingIds, toggleSaveListing, showToast, currentUser } = useApp();
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+  const [completedPayment, setCompletedPayment] = useState<PaymentRecord | null>(null);
+  const [trancheQuantity, setTrancheQuantity] = useState<number>(1000);
 
   const listing = listings.find(l => l.id === listingId);
 
@@ -194,19 +203,57 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
           </div>
 
           {/* Action CTAs */}
-          <div className="space-y-2 pt-2">
+          <div className="space-y-3 pt-2">
+            <div className="bg-[#F7F8F4] p-3 rounded-xl border border-[#DDEBDD] space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-[#123D2A] flex items-center gap-1">
+                  <CreditCard className="w-3.5 h-3.5 text-[#218653]" />
+                  <span>Instant Escrow Tranche (Demo)</span>
+                </span>
+                <span className="text-[10px] text-[#218653] font-semibold bg-[#DDEBDD] px-1.5 py-0.5 rounded">
+                  Instant Lock
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5 text-xs">
+                {[listing.minimumQuantity || 500, 1000, 2500].map((qty) => (
+                  <button
+                    key={qty}
+                    type="button"
+                    onClick={() => setTrancheQuantity(qty)}
+                    className={`py-1 px-2 rounded-lg text-xs font-mono font-semibold border transition-all cursor-pointer ${
+                      trancheQuantity === qty
+                        ? 'bg-[#123D2A] text-white border-[#123D2A]'
+                        : 'bg-white text-[#123D2A] border-[#DDEBDD] hover:bg-[#DDEBDD]/50'
+                    }`}
+                  >
+                    {qty.toLocaleString()} t
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setPaymentModalOpen(true)}
+                className="w-full py-2.5 px-4 text-xs font-bold text-white bg-[#218653] hover:bg-[#1B4D36] rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <CreditCard className="w-4 h-4" />
+                <span>
+                  Instant Buy {trancheQuantity.toLocaleString()} {listing.quantityUnit} & Settle (${((trancheQuantity * (listing.indicativeUnitPrice || 12.50)) + 500).toLocaleString()})
+                </span>
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={() => setQuoteModalOpen(true)}
-              className="w-full py-3 px-4 text-xs font-semibold text-white bg-[#123D2A] hover:bg-[#1B4D36] rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5"
+              className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-[#123D2A] hover:bg-[#1B4D36] rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              <span>Request Quote via CarbonBridge</span>
+              <span>Request Bespoke Quote via Broker</span>
             </button>
 
             <button
               type="button"
               onClick={() => navigate('/contact')}
-              className="w-full py-2.5 px-4 text-xs font-semibold text-[#123D2A] bg-[#F7F8F4] hover:bg-[#DDEBDD] rounded-xl border border-[#DDEBDD] transition-all flex items-center justify-center gap-1.5"
+              className="w-full py-2 px-4 text-xs font-semibold text-[#123D2A] bg-white hover:bg-[#DDEBDD] rounded-xl border border-[#DDEBDD] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <span>Contact Channel Desk Specialist</span>
             </button>
@@ -384,6 +431,29 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
         isOpen={quoteModalOpen}
         onClose={() => setQuoteModalOpen(false)}
         listing={listing}
+      />
+
+      <PaymentModal
+        isOpen={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        itemTitle={listing.projectName}
+        quantity={trancheQuantity}
+        quantityUnit={listing.quantityUnit}
+        unitPrice={listing.indicativeUnitPrice || 12.50}
+        totalAmount={trancheQuantity * (listing.indicativeUnitPrice || 12.50)}
+        onPaymentSuccess={(payment) => {
+          setCompletedPayment(payment);
+        }}
+        onViewReceipt={(payment) => {
+          setCompletedPayment(payment);
+          setReceiptModalOpen(true);
+        }}
+      />
+
+      <PaymentReceiptModal
+        isOpen={receiptModalOpen}
+        onClose={() => setReceiptModalOpen(false)}
+        payment={completedPayment}
       />
     </div>
   );

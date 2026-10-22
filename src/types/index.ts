@@ -252,3 +252,24 @@ export interface ContactSubmission {
   status: 'new' | 'reviewed' | 'resolved';
   createdAt: string;
 }
+
+export interface PaymentRecord {
+  id: string;
+  dealId?: string;
+  dealReference?: string;
+  itemTitle: string;
+  quantity: number;
+  quantityUnit: string;
+  amount: number;
+  currency: string;
+  paymentMethod: 'B2B Escrow Wire' | 'Corporate Purchasing Card' | 'Direct SEPA/ACH Debit';
+  payerCompany: string;
+  payerName: string;
+  beneficiary: string;
+  escrowReference: string;
+  status: 'escrow_funded' | 'settled' | 'refunded';
+  registrySerialBatch?: string;
+  certificateNumber: string;
+  timestamp: string;
+}
+

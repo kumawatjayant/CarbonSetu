@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -18,6 +19,12 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   maxWidth = 'lg'
 }) => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -32,7 +39,7 @@ export const Modal: React.FC<ModalProps> = ({
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const widthClasses = {
     sm: 'max-w-md',
@@ -43,24 +50,25 @@ export const Modal: React.FC<ModalProps> = ({
     '3xl': 'max-w-5xl'
   };
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Backdrop */}
+  const modalContent = (
+    <div className="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+      {/* Backdrop (rendered behind at z-0) */}
       <div 
-        className="fixed inset-0 bg-[#123D2A]/60 backdrop-blur-xs transition-opacity" 
+        className="fixed inset-0 bg-[#123D2A]/65 backdrop-blur-sm transition-opacity" 
         onClick={onClose}
         aria-hidden="true"
       />
 
-      <div className="flex min-h-full items-center justify-center p-4 sm:p-6 text-center">
+      {/* Dialog container with relative z-10 so it always renders sharply ABOVE the backdrop */}
+      <div className="relative z-10 flex min-h-full items-center justify-center p-4 sm:p-6 text-center pointer-events-none">
         <div 
-          className={`w-full ${widthClasses[maxWidth]} transform overflow-hidden rounded-xl bg-white text-left align-middle shadow-xl transition-all border border-[#DDEBDD]`}
+          className={`w-full ${widthClasses[maxWidth]} relative transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-2xl transition-all border border-[#DDEBDD] pointer-events-auto`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div className="px-6 py-4 border-b border-[#DDEBDD] flex items-center justify-between bg-[#F7F8F4]">
             <div>
-              <h3 className="text-base font-semibold text-[#123D2A]">
+              <h3 className="text-base font-bold text-[#123D2A]">
                 {title}
               </h3>
               {subtitle && (
@@ -72,7 +80,7 @@ export const Modal: React.FC<ModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="text-[#69746D] hover:text-[#123D2A] p-1.5 rounded-lg transition-colors"
+              className="text-[#69746D] hover:text-[#123D2A] p-1.5 rounded-lg hover:bg-[#DDEBDD]/50 transition-colors cursor-pointer"
               aria-label="Close modal"
             >
               <X className="w-5 h-5" />
@@ -80,11 +88,13 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
 
           {/* Body */}
-          <div className="px-6 py-5 max-h-[80vh] overflow-y-auto">
+          <div className="px-6 py-5 max-h-[82vh] overflow-y-auto bg-white">
             {children}
           </div>
         </div>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };

@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { DemoBadge } from '../../components/common/DemoBadge';
+import { PaymentReceiptModal } from '../../components/payment/PaymentReceiptModal';
+import { PaymentRecord } from '../../types';
 import { 
   Building2, 
   Layers, 
@@ -12,7 +14,10 @@ import {
   ChevronRight, 
   Sparkles,
   Plus,
-  Scale
+  Scale,
+  CreditCard,
+  BadgeCheck,
+  Lock
 } from 'lucide-react';
 
 interface BuyerDashboardProps {
@@ -26,12 +31,15 @@ export const BuyerDashboard: React.FC<BuyerDashboardProps> = ({
   onSelectListing,
   onSelectBundle 
 }) => {
-  const { currentUser, deals, listings, bundles, savedListingIds, savedBundleIds, requirements } = useApp();
+  const { currentUser, deals, listings, bundles, savedListingIds, savedBundleIds, requirements, payments } = useApp();
+  const [selectedReceipt, setSelectedReceipt] = useState<PaymentRecord | null>(null);
+  const [receiptModalOpen, setReceiptModalOpen] = useState(false);
 
   const userDeals = deals.filter(d => currentUser && (d.buyerId === currentUser.id || d.buyerCompany === currentUser.companyName));
   const activeInquiries = userDeals.filter(d => d.stage !== 'Completed' && d.stage !== 'Cancelled');
   const completedDeals = userDeals.filter(d => d.stage === 'Completed');
   const userRequirements = requirements.filter(r => currentUser && r.buyerId === currentUser.id);
+  const userPayments = payments.filter(p => !currentUser || p.payerCompany === currentUser.companyName || currentUser.role === 'buyer' || currentUser.role === 'admin');
 
   // Recommendations: match open requirements with listings
   const recommendedListings = listings.filter(l => l.listingStatus === 'approved').slice(0, 2);
@@ -117,6 +125,80 @@ export const BuyerDashboard: React.FC<BuyerDashboardProps> = ({
           <span className="text-[11px] text-[#69746D] block mt-1">Registry verified</span>
         </div>
       </div>
+
+      {/* Settled Escrow Payments & Registry Certificates */}
+      {userPayments.length > 0 && (
+        <div className="bg-white p-6 rounded-2xl border border-[#DDEBDD] shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-[#DDEBDD] pb-3">
+            <div className="flex items-center gap-2">
+              <BadgeCheck className="w-5 h-5 text-[#218653]" />
+              <div>
+                <h2 className="text-base font-bold text-[#123D2A]">
+                  Settled Escrow Payments & Verified Registry Certificates ({userPayments.length})
+                </h2>
+                <p className="text-xs text-[#69746D]">
+                  Audited environmental unit holdings irrevocably funded into CarbonBridge Escrow Custody.
+                </p>
+              </div>
+            </div>
+            <span className="text-[11px] font-mono font-semibold text-[#218653] bg-[#DDEBDD] px-2 py-0.5 rounded">
+              Escrow Custody Protected
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {userPayments.map((p) => (
+              <div
+                key={p.id}
+                className="p-4 rounded-xl border border-[#DDEBDD] bg-[#F7F8F4] hover:border-[#218653] transition-all space-y-3 text-xs"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="text-[10px] uppercase font-mono text-[#69746D] block">
+                      CERTIFICATE #{p.certificateNumber}
+                    </span>
+                    <h4 className="font-bold text-[#123D2A] text-sm mt-0.5 truncate max-w-[240px]">
+                      {p.itemTitle}
+                    </h4>
+                  </div>
+                  <span className="text-[10px] uppercase font-semibold font-mono text-[#218653] bg-white px-2 py-0.5 rounded border border-[#DDEBDD]">
+                    {p.paymentMethod}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-[11px] text-[#69746D] bg-white p-2.5 rounded-lg border border-[#DDEBDD]/70">
+                  <div>
+                    <span>Volume Settled:</span>
+                    <strong className="block text-[#123D2A] font-mono">{p.quantity.toLocaleString()} {p.quantityUnit}</strong>
+                  </div>
+                  <div>
+                    <span>Amount Transacted:</span>
+                    <strong className="block text-[#218653] font-mono">${p.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <div className="text-[10px] text-[#69746D]">
+                    Ref: <span className="font-mono text-[#123D2A]">{p.escrowReference}</span> · {new Date(p.timestamp).toLocaleDateString()}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedReceipt(p);
+                      setReceiptModalOpen(true);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-[#123D2A] hover:bg-[#1B4D36] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>View Certificate</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Main Two Column View: Active Inquiries & Matching Recommendations */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -263,6 +345,12 @@ export const BuyerDashboard: React.FC<BuyerDashboardProps> = ({
         </div>
 
       </div>
+
+      <PaymentReceiptModal
+        isOpen={receiptModalOpen}
+        onClose={() => setReceiptModalOpen(false)}
+        payment={selectedReceipt}
+      />
 
     </div>
   );

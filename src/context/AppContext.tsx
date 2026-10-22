@@ -11,7 +11,8 @@ import {
   AuditLogItem, 
   ContactSubmission,
   ListingStatus,
-  DealStage
+  DealStage,
+  PaymentRecord
 } from '../types';
 import { 
   DEMO_USERS, 
@@ -20,7 +21,8 @@ import {
   DEMO_REQUIREMENTS, 
   DEMO_DEALS, 
   DEMO_COMMISSIONS, 
-  DEMO_AUDIT_LOGS 
+  DEMO_AUDIT_LOGS,
+  DEMO_PAYMENTS
 } from '../data/demoData';
 
 interface Toast {
@@ -90,6 +92,10 @@ interface AppContextType {
   commissions: CommissionRecord[];
   updateCommissionStatus: (id: string, status: CommissionRecord['status']) => void;
 
+  // Payments & Escrow Settlement
+  payments: PaymentRecord[];
+  processPayment: (paymentData: Omit<PaymentRecord, 'id' | 'timestamp' | 'certificateNumber'>) => PaymentRecord;
+
   // Contacts & Newsletter
   contactSubmissions: ContactSubmission[];
   submitContact: (sub: Omit<ContactSubmission, 'id' | 'createdAt' | 'status'>) => void;
@@ -151,6 +157,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : DEMO_COMMISSIONS;
   });
 
+  const [payments, setPayments] = useState<PaymentRecord[]>(() => {
+    const saved = localStorage.getItem(`${STORAGE_KEY_PREFIX}payments`);
+    return saved ? JSON.parse(saved) : DEMO_PAYMENTS;
+  });
+
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY_PREFIX}auditLogs`);
     return saved ? JSON.parse(saved) : DEMO_AUDIT_LOGS;
@@ -206,6 +217,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem(`${STORAGE_KEY_PREFIX}commissions`, JSON.stringify(commissions));
   }, [commissions]);
+
+  useEffect(() => {
+    localStorage.setItem(`${STORAGE_KEY_PREFIX}payments`, JSON.stringify(payments));
+  }, [payments]);
 
   useEffect(() => {
     localStorage.setItem(`${STORAGE_KEY_PREFIX}auditLogs`, JSON.stringify(auditLogs));
@@ -733,6 +748,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return true;
   };
 
+  // Process Payment & Escrow Settlement
+  const processPayment = (paymentData: Omit<PaymentRecord, 'id' | 'timestamp' | 'certificateNumber'>): PaymentRecord => {
+    const id = `pay-${Date.now()}`;
+    const certificateNumber = `CB-CERT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const timestamp = new Date().toISOString();
+
+    const newPayment: PaymentRecord = {
+      ...paymentData,
+      id,
+      certificateNumber,
+      timestamp,
+      registrySerialBatch: paymentData.registrySerialBatch || `VCS-BATCH-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`
+    };
+
+    setPayments(prev => [newPayment, ...prev]);
+
+    // If linked to an inquiry or deal, transition deal to Completed
+    if (paymentData.dealId) {
+      updateDealStage(paymentData.dealId, 'Completed', {
+        agreedQuantity: paymentData.quantity,
+        agreedTotalValue: paymentData.amount,
+        closureReason: `Settled via ${paymentData.paymentMethod} (Escrow Ref: ${paymentData.escrowReference})`
+      });
+
+      // Also mark commission as paid if exists
+      setCommissions(prev => prev.map(c => {
+        if (c.dealId === paymentData.dealId) {
+          return { ...c, status: 'paid', amountPaid: c.netCommissionDue, updatedAt: new Date().toISOString() };
+        }
+        return c;
+      }));
+    }
+
+    logAudit('Payment Settled', 'deal', id, `Settled $${paymentData.amount.toLocaleString()} for ${paymentData.quantity.toLocaleString()} ${paymentData.quantityUnit} (${paymentData.paymentMethod})`);
+    showToast(`Payment of $${paymentData.amount.toLocaleString()} confirmed! Certificate ${certificateNumber} generated.`, 'success');
+
+    return newPayment;
+  };
+
   // Reset to original demo data
   const resetDemoData = () => {
     setUsers(DEMO_USERS);
@@ -742,6 +796,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setRequirements(DEMO_REQUIREMENTS);
     setDeals(DEMO_DEALS);
     setCommissions(DEMO_COMMISSIONS);
+    setPayments(DEMO_PAYMENTS);
     setAuditLogs(DEMO_AUDIT_LOGS);
     setSavedListingIds(['list-101', 'list-104']);
     setSavedBundleIds(['bndl-1']);
@@ -755,6 +810,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.removeItem(`${STORAGE_KEY_PREFIX}requirements`);
     localStorage.removeItem(`${STORAGE_KEY_PREFIX}deals`);
     localStorage.removeItem(`${STORAGE_KEY_PREFIX}commissions`);
+    localStorage.removeItem(`${STORAGE_KEY_PREFIX}payments`);
     localStorage.removeItem(`${STORAGE_KEY_PREFIX}auditLogs`);
     localStorage.removeItem(`${STORAGE_KEY_PREFIX}savedListings`);
     localStorage.removeItem(`${STORAGE_KEY_PREFIX}savedBundles`);
@@ -796,6 +852,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         assignDealAdmin,
         commissions,
         updateCommissionStatus,
+        payments,
+        processPayment,
         contactSubmissions,
         submitContact,
         newsletterSubscribers,
